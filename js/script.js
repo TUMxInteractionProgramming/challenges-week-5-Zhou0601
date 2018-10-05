@@ -109,6 +109,9 @@ function sendMessage() {
     var message = new Message($('#message').val());
     console.log("New message:", message);
 
+    if ($('#message').val().length == 0) { //no empty messages!
+        return;
+    } else {
     // #8 convenient message append with jQuery:
     $('#messages').append(createMessageElement(message));
 
@@ -118,6 +121,7 @@ function sendMessage() {
 
     // #8 clear the message input
     $('#message').val('');
+    }
 }
 
 /**
@@ -145,16 +149,71 @@ function createMessageElement(messageObject) {
 }
 
 
-function listChannels() {
+function listChannels(sortBy) {
     // #8 channel onload
     //$('#channels ul').append("<li>New Channel</li>")
 
     // #8 five new channels
+    /*
     $('#channels ul').append(createChannelElement(yummy));
     $('#channels ul').append(createChannelElement(sevencontinents));
     $('#channels ul').append(createChannelElement(killerapp));
     $('#channels ul').append(createChannelElement(firstpersononmars));
     $('#channels ul').append(createChannelElement(octoberfest));
+    */
+    
+   $('#channels ul').empty();
+    var sortBy = sortBy;
+    sortChannels(sortBy);
+    
+    for (i = 0; i < channels.length; i++) {
+        var channelName = channels[i];
+        $('#channels ul').append(createChannelElement(channelName));
+    }
+}
+
+function sortChannels(sortBY) {
+    if (sortBY == 'latest') {
+        for (i = 0; i < channels.length - 1; i++) {
+            channels.sort(compareDate)
+        }
+    }
+    
+    if (sortBY == 'trending') {
+        for (i = 0; i < channels.length - 1; i++) {
+            channels.sort(compareMessageCount)
+        }
+    }
+
+    if (sortBY == 'favourite') {
+        for (i = 0; i < channels.length - 1; i++) {
+            channels.sort(compareStarred)
+        }
+    }
+}
+
+function compareDate(channel1, channel2) {
+    if (channel1.createdOn.getTime() < channel2.createdOn.getTime()) {
+        return 1;
+    } else {
+        return -1;
+    }
+}
+
+function compareMessageCount(channel1, channel2) {
+    if (channel1.messageCount < channel2.messageCount) {
+        return 1;
+    } else {
+        return -1;
+    }
+}
+
+function compareStarred(channel1, channel2) {
+    if (channel1.starred == true && channel2.starred == false) {
+        return -1;
+    } else {
+        return 1;
+    }
 }
 
 /**
@@ -192,4 +251,49 @@ function createChannelElement(channelObject) {
 
     // return the complete channel
     return channel;
+}
+
+function createMode() {
+    $('#messages').empty();
+    $('#right-app-bar').html("<input type='text' placeholder='Type #ChannelName...' id='newChannel'> <span id='abort' onclick='abort()'>X Abort</span>");
+
+    $('#send-button').html("<small>CREATE</small>").attr("onclick", "create()")
+
+}
+
+function abort() {
+    $('#right-app-bar').html(" <span id='channel-name'>#SevenContinents</span> <small id='channel-location'>by <strong>cheeses.yard.applies</strong></small> <i class='fas fa-star' onclick='star()'></i>");
+
+    $('#send-button').html("<i class='fas fa-arrow-right'></i>").attr("onclick", "sendMessage()");
+
+    $('#messages').empty(); //clear messages
+}
+
+function create() {
+    var newChannel = $('#newChannel').val();
+    if ($('#message').val().length == 0) {
+        abort();
+        return;
+    }
+
+    if (newChannel.charAt(0) != "#") {
+        abort();
+        return;
+    } else {
+        var newChannelElement = {
+            name: newChannel,
+            createdOn: new Date(2017, 04, 14),
+            createdBy: "politics.mashing.winners",
+            starred: true,
+            expiresIn: 70,
+            messageCount: 0,
+            messages: []
+        };
+        currentChannel = newChannelElement;
+        channels.push(newChannelElement);
+        sendMessage();
+        $('#right-app-bar').html(" <span id='channel-name'>" + newChannelElement.name + "</span> <small id='channel-location'>by <strong>" + newChannelElement.createdBy + "</strong></small> <i class='fa fa-star' onclick='star()'></i>") //write new channel to app bar
+        listChannels('latest');
+        $('#send-button').html("<i class='fa fa-arrow-right'></i>").attr("onclick", "sendMessage()");
+    }
 }
